@@ -1,4 +1,4 @@
-# VNOVIME - Excel File Merger
+# VNOVIME - Excel Rows Adder
 
 ![VNOVIME](https://img.shields.io/badge/VNOVIME-Excel%20Merger-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.6%2B-green.svg)
@@ -120,5 +120,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 5. Open a Pull Request
 
 ## Support
+
 
 For support and questions, please open an issue in the repository.

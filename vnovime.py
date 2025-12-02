@@ -21,7 +21,11 @@ ascii_art = r"""
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝ 
 """
-print(ascii_art)
+try:
+    print(ascii_art)
+except UnicodeEncodeError:
+    # Fallback for Windows console that doesn't support Unicode
+    print("VNOVIME - Excel Line Item Merger")
 # --- End of Banner ---
 
 # --- Configuration ---
@@ -52,8 +56,12 @@ output_file = f'{big_file_basename} Line Items Added.xlsx'
 # --- 1. Load the Data ---
 print("Loading files...")
 try:
-    df_big = pd.read_excel(big_file_path, sheet_name=sheet_name)
+    df_big = pd.read_excel(big_file_path, sheet_name=sheet_name, dtype=str, keep_default_na=False, na_filter=False)
     print(f"  Successfully read {len(df_big)} rows from big file.")
+    # DEBUG: Check for NA values in big file
+    na_counts_big = df_big.isna().sum()
+    if na_counts_big.sum() > 0:
+        print(f"  DEBUG: Found NA values in big file columns: {na_counts_big[na_counts_big > 0].to_dict()}")
 except ValueError:
     print(f"  Error: Worksheet '{sheet_name}' not found in {os.path.basename(big_file_path)}")
     exit(1)
@@ -62,8 +70,12 @@ except Exception as e:
     exit(1)
 
 try:
-    df_small = pd.read_excel(small_file_path, sheet_name=sheet_name)
+    df_small = pd.read_excel(small_file_path, sheet_name=sheet_name, dtype=str, keep_default_na=False, na_filter=False)
     print(f"  Successfully read {len(df_small)} rows from small file.")
+    # DEBUG: Check for NA values in small file
+    na_counts_small = df_small.isna().sum()
+    if na_counts_small.sum() > 0:
+        print(f"  DEBUG: Found NA values in small file columns: {na_counts_small[na_counts_small > 0].to_dict()}")
 except ValueError:
     print(f"  Error: Worksheet '{sheet_name}' not found in {os.path.basename(small_file_path)}")
     exit(1)
@@ -87,6 +99,11 @@ if not new_rows.empty:
     
     big_columns = df_big.columns.tolist()
     
+    # DEBUG: Check NA values in new_rows before column alignment
+    na_counts_new_before = new_rows.isna().sum()
+    if na_counts_new_before.sum() > 0:
+        print(f"  DEBUG: NA values in new_rows before alignment: {na_counts_new_before[na_counts_new_before > 0].to_dict()}")
+    
     for col in big_columns:
         if col not in new_rows.columns:
             # If the column (e.g., 'Story Ori') is missing in the small file,
@@ -98,6 +115,11 @@ if not new_rows.empty:
     # This ensures no "misplacement" happens.
     # Note: This also drops any extra columns from the small file that aren't in the big file.
     new_rows = new_rows[big_columns]
+    
+    # DEBUG: Check NA values in new_rows after column alignment
+    na_counts_new_after = new_rows.isna().sum()
+    if na_counts_new_after.sum() > 0:
+        print(f"  DEBUG: NA values in new_rows after alignment: {na_counts_new_after[na_counts_new_after > 0].to_dict()}")
 
     # --- 4. Append and Sort ---
     print("Starting merge process...")
@@ -109,6 +131,11 @@ if not new_rows.empty:
     # Combine
     df_combined = pd.concat([df_big, new_rows], ignore_index=True)
     print(f"Successfully merged {len(df_combined)} total rows.")
+    
+    # DEBUG: Check NA values in combined dataframe
+    na_counts_combined = df_combined.isna().sum()
+    if na_counts_combined.sum() > 0:
+        print(f"  DEBUG: NA values in combined dataframe: {na_counts_combined[na_counts_combined > 0].to_dict()}")
     
     # Sort by channel name, program date, and clip start time if these columns exist
     sort_columns = []
@@ -136,6 +163,11 @@ if not new_rows.empty:
     # --- 5. Save with Formatting ---
     try:
         print(f"Attempting to save and format the file as '{os.path.basename(output_file)}'...")
+        # DEBUG: Check NA values before saving
+        na_counts_before_save = df_combined.isna().sum()
+        if na_counts_before_save.sum() > 0:
+            print(f"  DEBUG: NA values before saving to Excel: {na_counts_before_save[na_counts_before_save > 0].to_dict()}")
+        
         with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
             df_combined.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=1)
             
